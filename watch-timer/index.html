@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机械表走时检测系统</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">⚙</span>
+    <div>
+      <h1>机械表走时检测系统</h1>
+      <p class="sub">擒纵三子声分析 · 校表仪网页版</p>
+    </div>
+  </div>
+  <div class="status-pill" id="lockPill"><span class="dot"></span><span id="lockText">未连接</span></div>
+</header>
+
+<main class="layout">
+  <!-- 左：控制与读数 -->
+  <section class="panel controls">
+    <div class="src-toggle">
+      <button class="seg active" id="micBtn">🎙 麦克风实测</button>
+      <button class="seg" id="synthBtn">🧪 合成演示</button>
+    </div>
+
+    <div class="control-group">
+      <label>升角（度）</label>
+      <input type="number" id="liftAngle" value="52" min="30" max="60" step="1">
+    </div>
+
+    <div id="micControls" class="control-block">
+      <div class="control-group">
+        <label>采样率</label>
+        <select id="sampleRate">
+          <option value="96000" selected>96000 Hz（推荐）</option>
+          <option value="48000">48000 Hz</option>
+          <option value="44100">44100 Hz</option>
+        </select>
+      </div>
+      <button id="startMic" class="primary">开始检测</button>
+      <button id="stopMic" class="ghost" disabled>停止</button>
+      <p class="hint">表紧贴麦克风，环境尽量安静，每方位测约 2 分钟</p>
+    </div>
+
+    <div id="synthControls" class="control-block" hidden>
+      <div class="control-group">
+        <label>演示场景</label>
+        <select id="scenario"></select>
+      </div>
+      <div class="control-group">
+        <label>日差微调（s/day）<span id="rateLbl" class="val">0</span></label>
+        <input type="range" id="rateSlider" min="-40" max="40" step="1" value="0">
+      </div>
+      <button id="startSynth" class="primary">开始合成</button>
+      <button id="stopSynth" class="ghost" disabled>停止</button>
+      <p class="hint">拖动滑块模拟师傅拨快慢针，读数实时跟随</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 六方位位差 -->
+    <div class="positions">
+      <div class="pos-head">
+        <h3>六方位位差</h3>
+        <button id="clearPos" class="mini">清空</button>
+      </div>
+      <div class="pos-grid" id="posGrid"></div>
+    </div>
+  </section>
+
+  <!-- 中：仪表 -->
+  <section class="panel metrics">
+    <div class="metric-cards">
+      <div class="card">
+        <div class="card-label">日差</div>
+        <div class="card-value" id="rate">–</div>
+        <div class="card-unit">秒/天</div>
+        <div class="card-sub" id="liveRate">实时 –</div>
+      </div>
+      <div class="card">
+        <div class="card-label">摆幅</div>
+        <div class="card-value" id="amplitude">–</div>
+        <div class="card-unit">度</div>
+        <div class="card-sub" id="ampLR">左 – / 右 –</div>
+      </div>
+      <div class="card">
+        <div class="card-label">偏振</div>
+        <div class="card-value" id="beatError">–</div>
+        <div class="card-unit">毫秒</div>
+        <div class="card-sub" id="bePolarity">–</div>
+      </div>
+      <div class="card">
+        <div class="card-label">摆频</div>
+        <div class="card-value" id="bph">–</div>
+        <div class="card-unit">拍/时</div>
+        <div class="card-sub" id="coverage">覆盖率 –</div>
+      </div>
+    </div>
+
+    <div class="subsound">
+      <h3>擒纵三子声</h3>
+      <div id="clusterInfo" class="cluster-list">等待数据…</div>
+      <div id="rejectInfo" class="reject-list"></div>
+    </div>
+  </section>
+
+  <!-- 右：时序图 -->
+  <section class="panel charts">
+    <div class="chart-head">
+      <h3>时序图</h3>
+      <div class="legend">
+        <span><i class="lg unlock"></i>开锁</span>
+        <span><i class="lg impulse"></i>冲击</span>
+        <span><i class="lg drop"></i>落下</span>
+      </div>
+    </div>
+    <canvas id="waveCanvas"></canvas>
+    <canvas id="stripCanvas"></canvas>
+    <div class="chart-foot">
+      <span id="elapsed">00:00</span>
+      <span id="beatCount">0 拍</span>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  纯浏览器本地运算，音频不上传 · 采样信号经带通滤波、自适应包络检波、拍网格锁相、子声聚类与异声剔除
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
