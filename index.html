@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>机械表走时检测系统 · 网页校表仪</title>
+  <link rel="stylesheet" href="./src/app/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>机械表走时检测系统</h1>
+    <p>麦克风拾音 · 擒纵三子声（开锁 P1 / 冲击 P2 / 落下 P3）拆分 · 摆频识别 · 摆幅/日差/偏振 · 六方位位差 · 实时调节</p>
+  </header>
+
+  <div class="layout">
+    <!-- ============ 左侧控制区 ============ -->
+    <aside>
+      <section class="panel">
+        <h2>信号来源</h2>
+        <div class="btn-row">
+          <button id="btnMic" class="primary">开始麦克风</button>
+          <button id="btnStop">停止</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+          <button id="btnSynth">合成信号自测</button>
+          <button id="btnWav">分析 WAV</button>
+        </div>
+        <input type="file" id="wavFile" accept=".wav,audio/wav" hidden />
+        <div class="btn-row" style="margin-top:8px">
+          <button id="btnSaveWav">导出合成 WAV</button>
+        </div>
+        <p class="hint">麦克风需在 HTTPS 或 localhost 下授权；WAV 支持 16/24/32-bit PCM。</p>
+      </section>
+
+      <section class="panel">
+        <h2>机芯参数</h2>
+        <div class="field">
+          <label>升角（擒纵叉总升角）<span id="liftAngleValue">52°</span></label>
+          <input type="range" id="liftAngle" min="30" max="58" step="1" value="52" />
+        </div>
+        <p class="hint">多数瑞士杠杆机芯为 52°；个别机芯（如部分日本 cal.）用 42–54°，按机芯手册调整。</p>
+      </section>
+
+      <section class="panel">
+        <h2>合成信号参数（自测用）</h2>
+        <div class="grid-2">
+          <div class="field">
+            <label>摆频 vph</label>
+            <select id="sBph">
+              <option>18000</option>
+              <option>21600</option>
+              <option>25200</option>
+              <option selected>28800</option>
+              <option>36000</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>时长 (秒)</label>
+            <input type="number" id="sDur" value="120" min="10" max="300" />
+          </div>
+          <div class="field">
+            <label>日差 (s/d)</label>
+            <input type="number" id="sRate" value="5" step="0.5" />
+          </div>
+          <div class="field">
+            <label>偏振 (ms)</label>
+            <input type="number" id="sBeat" value="0.4" step="0.1" />
+          </div>
+          <div class="field">
+            <label>摆幅 (°)</label>
+            <input type="number" id="sAmp" value="280" min="120" max="340" />
+          </div>
+          <div class="field">
+            <label>信噪比 (dB)</label>
+            <input type="number" id="sSnr" value="28" min="6" max="45" />
+          </div>
+          <div class="field">
+            <label>抖动 (µs)</label>
+            <input type="number" id="sJitter" value="50" min="0" max="1000" />
+          </div>
+          <div class="field">
+            <label>P1 增益</label>
+            <input type="number" id="sP1" value="1" min="0.05" max="1" step="0.05" />
+          </div>
+          <div class="field">
+            <label>漏拍率 (%)</label>
+            <input type="number" id="sMiss" value="0" min="0" max="30" />
+          </div>
+          <div class="field">
+            <label>随机冲击 (Hz)</label>
+            <input type="number" id="sImpact" value="0" min="0" max="10" step="0.5" />
+          </div>
+          <div class="field">
+            <label>噪声颜色</label>
+            <select id="sNoiseColor">
+              <option value="pink" selected>粉噪</option>
+              <option value="white">白噪</option>
+              <option value="brown">棕噪</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>随机种子</label>
+            <input type="number" id="sSeed" value="1" min="1" />
+          </div>
+        </div>
+        <div class="check-row">
+          <label><input type="checkbox" id="sMains" /> 50Hz 市电哼扰</label>
+          <label><input type="checkbox" id="sDate" /> 日历跳字</label>
+          <label><input type="checkbox" id="sTourb" /> 陀飞轮</label>
+        </div>
+        <p class="hint">日历跳字与陀飞轮的机构声刻意落在节拍网格外，用于验证系统不会把它们误判为擒纵子声。</p>
+      </section>
+    </aside>
+
+    <!-- ============ 右侧主显示区 ============ -->
+    <main>
+      <section class="panel">
+        <h2>实时指标（拨快慢针时观察数值变化）</h2>
+        <div class="metrics">
+          <div class="metric"><div class="label">摆频</div><div class="value" id="mBph">—</div></div>
+          <div class="metric rate"><div class="label">日差</div><div class="value" id="mRate">—</div></div>
+          <div class="metric beat"><div class="label">偏振</div><div class="value" id="mBeat">—</div></div>
+          <div class="metric amp"><div class="label">摆幅</div><div class="value"><span id="mAmp">—</span></div></div>
+          <div class="metric"><div class="label">升角时间</div><div class="value" id="mLift" style="font-size:20px">—</div></div>
+        </div>
+        <div class="quality">
+          <span>已分析 <b id="mElapsed">0s</b></span>
+          <span>网格填充率 <b id="qFill">—</b></span>
+          <span>信噪比 <b id="qSnr">—</b></span>
+          <span>时序抖动 <b id="qJitter">—</b></span>
+          <span>拦截离格机构声 <b id="qOffgrid">0</b> 次</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>时序图（瞬时日差纸带，蓝=tic 偶拍 / 橙=tac 奇拍）</h2>
+        <div class="chart-box">
+          <canvas id="timingChart"></canvas>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>擒纵三子声结构（最近一拍）</h2>
+        <div class="chart-box">
+          <canvas id="subChart"></canvas>
+        </div>
+        <div class="trend-row">
+          <div class="chart-box trend-box">
+            <h3>日差趋势 (s/d)</h3>
+            <canvas id="rateTrend"></canvas>
+          </div>
+          <div class="chart-box trend-box">
+            <h3>摆幅趋势 (°)</h3>
+            <canvas id="ampTrend"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>六方位位差测量（每个方位稳定后点击卡片记录）</h2>
+        <div id="posGrid"></div>
+        <div class="pos-summary">
+          <div class="cell"><div class="k">位差（最大−最小日差）</div><div class="v" id="posVariation">—</div></div>
+          <div class="cell"><div class="k">平均日差</div><div class="v" id="posMeanRate">—</div></div>
+          <div class="cell"><div class="k">最低摆幅</div><div class="v" id="posMinAmp">—</div></div>
+          <div class="cell"><div class="k">最大偏振</div><div class="v" id="posMaxBeat">—</div></div>
+        </div>
+        <div class="btn-row" style="margin-top:12px">
+          <button id="btnPosClear">清空方位记录</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="status-bar">
+    <div class="status" id="statusBar">就绪：选择信号来源开始检测</div>
+  </div>
+
+  <script type="module" src="./src/app/main.js"></script>
+</body>
+</html>
